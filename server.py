@@ -358,10 +358,10 @@ def get_file_versions(path: str, limit: int = 10) -> str:
 @mcp.tool(
     annotations={"readOnlyHint": True, "destructiveHint": False}
 )
-def read_multiple_files(paths: list[str], max_chars_per_file: int = 2000) -> str:
+def read_multiple_files(paths: list[str], max_chars_per_file: int = 8000) -> str:
     """
-    Read many files in ONE call, fetched in parallel (16 threads). Token-cheap:
-    each file gets truncated to max_chars_per_file (default 2000), not dumped whole.
+    Read many files in ONE call, fetched in parallel (32 threads). Token-cheap:
+    each file gets truncated to max_chars_per_file (default 8000), not dumped whole.
     Binary files are skipped (size noted only). One bad path won't kill the rest.
     Use this for scanning dozens/hundreds of vault notes fast and cheap.
     """
@@ -380,7 +380,7 @@ def read_multiple_files(paths: list[str], max_chars_per_file: int = 2000) -> str
         except ApiError as e:
             return f"=== {p} ===\n[error] {e}\n"
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=16) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=32) as ex:
         results = list(ex.map(_fetch, paths))
     return "\n".join(results)
 
@@ -494,7 +494,7 @@ def get_file_info(path: str) -> str:
 )
 def bulk_edit_files(edits: list[dict], dry_run: bool = False) -> str:
     """
-    Edit MANY files at once, in parallel (8 threads) — the 'bulk edit' tool.
+    Edit MANY files at once, in parallel (24 threads) — the 'bulk edit' tool.
     edits = [{"path": "/a.md", "edits": [{"oldText": "...", "newText": "..."}]}, ...]
     Each oldText must match exactly once per file or that file errors out (others still run).
     dry_run=True returns unified diffs without saving anything.
@@ -531,7 +531,7 @@ def bulk_edit_files(edits: list[dict], dry_run: bool = False) -> str:
         except ApiError as e:
             return f"=== {p} ===\n[error writing] {e}\n"
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=8) as ex:
+    with concurrent.futures.ThreadPoolExecutor(max_workers=24) as ex:
         results = list(ex.map(_apply, edits))
     return "\n".join(results)
 
